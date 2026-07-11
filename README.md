@@ -54,7 +54,7 @@ If you use **Ollama** and have nothing yet, this installs it and pulls the defau
 make llm-setup      # installs Ollama, pulls gpt-oss:20b (~13 GB), creates llm.env
 ```
 
-> **Your coworker's own model:** he just edits `llm.env` to point at his server
+> **Own model:** just edit `llm.env` to point at his server
 > (`LLM_BASE_URL` + `LLM_MODEL`). No code changes. Any endpoint that speaks the OpenAI
 > chat-completions + tool-calls API works. A model with **good tool-calling** is required
 > (gpt-oss:20b, qwen2.5:14b+, llama3.1:8b+, gpt-4o, etc.); tiny models won't drive the tools well.
