@@ -1,0 +1,42 @@
+services:
+  neo4j:
+    image: neo4j:5.26-community
+    container_name: apex-neo4j
+    environment:
+      NEO4J_AUTH: "neo4j/${NEO4J_PASSWORD:-apexpassword}"
+      NEO4J_PLUGINS: '["graph-data-science"]'
+      NEO4J_dbms_security_procedures_unrestricted: "gds.*"
+      NEO4J_dbms_memory_heap_max__size: "2G"
+    ports:
+      - "7474:7474"   # Browser
+      - "7687:7687"   # Bolt
+    volumes:
+      - neo4j_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7474 > /dev/null || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    restart: unless-stopped
+
+  profiler:
+    build: .
+    container_name: apex-profiler
+    profiles: ["profiler"]   # solo corre con `docker compose run --rm profiler`
+    env_file:
+      - .env
+    environment:
+      # Dentro de la red de compose, Neo4j se resuelve por nombre de servicio
+      NEO4J_URI: "bolt://neo4j:7687"
+      # El Postgres remoto llega vía el port-forward del contenedor VPN publicado en el host
+      DB_HOST: "${DB_HOST:-host.docker.internal}"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      neo4j:
+        condition: service_healthy
+
+volumes:
+  neo4j_data:

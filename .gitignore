@@ -1,0 +1,30 @@
+# Rust build artifacts
+target/
+**/target/
+
+# Secrets — NEVER commit these (use the .example templates instead)
+.env
+**/.env
+.env/.client
+
+# Client-specific artifacts (schema metadata / profiling output)
+**/data/*.json
+**/data/*.csv
+
+# macOS
+.DS_Store
+**/.DS_Store
+
+# Node (MCP Inspector)
+node_modules/
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# Python caches
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# Machine-specific MCP registration (use .mcp.json.example as template)
+.mcp.json
