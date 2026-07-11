@@ -28,10 +28,37 @@ BOLD, DIM, CYAN, AMBER, GREEN, RED, END = (
 )
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-LLM_BASE_URL = os.environ.get("LLM_BASE_URL", "http://localhost:11434/v1").rstrip("/")
-LLM_MODEL = os.environ.get("LLM_MODEL", "gpt-oss:20b")
-LLM_API_KEY = os.environ.get("LLM_API_KEY", "ollama")
-MCP_URL = os.environ.get("MCP_URL", "http://localhost:8977/mcp")
+
+
+def _load_config():
+    """Config precedence: real env var > llm.env file > built-in default.
+    llm.env is KEY=VALUE lines (# comments ok). Copy llm.env.example to llm.env."""
+    cfg = {}
+    path = os.path.join(REPO, "llm.env")
+    try:
+        with open(path) as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                k, v = line.split("=", 1)
+                cfg[k.strip()] = v.strip().strip('"').strip("'")
+    except FileNotFoundError:
+        pass
+    return cfg
+
+
+_CFG = _load_config()
+
+
+def _get(key, default):
+    return os.environ.get(key) or _CFG.get(key) or default
+
+
+LLM_BASE_URL = _get("LLM_BASE_URL", "http://localhost:11434/v1").rstrip("/")
+LLM_MODEL = _get("LLM_MODEL", "gpt-oss:20b")
+LLM_API_KEY = _get("LLM_API_KEY", "ollama")
+MCP_URL = _get("MCP_URL", "http://localhost:8977/mcp")
 MAX_TURNS = 25
 
 SYSTEM_PROMPT = """You are a senior data analyst working over a knowledge graph of a large \

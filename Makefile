@@ -125,11 +125,15 @@ mcp-inspector:
 # Works with ANY OpenAI-compatible endpoint: LLM_BASE_URL / LLM_MODEL / LLM_API_KEY.
 
 # One-time: install Ollama + pull the local model
-llm-setup:
+llm-setup: llm-config
 	@which ollama >/dev/null 2>&1 || brew install ollama
 	@pgrep -x ollama >/dev/null 2>&1 || (nohup ollama serve >/tmp/ollama.log 2>&1 & sleep 3)
-	@ollama pull qwen2.5:14b
-	@echo "LLM local listo: qwen2.5:14b"
+	@ollama pull gpt-oss:20b
+	@echo "Local LLM ready: gpt-oss:20b  (edit llm.env to use a different model)"
+
+# Create llm.env from the template if it doesn't exist
+llm-config:
+	@test -f llm.env || { cp llm.env.example llm.env; echo "created llm.env (edit it to pick your model)"; }
 
 llm-up:
 	@pgrep -x ollama >/dev/null 2>&1 || (nohup ollama serve >/tmp/ollama.log 2>&1 & sleep 3)
@@ -202,5 +206,5 @@ mcp-stop:
 
 .PHONY: help setup graph-up graph-browser graph-down demo demo-db demo-profile demo-clean \
         vpn vpn-forward profile mcp-build mcp-test mcp-quality mcp-inspector \
-        llm-setup llm-up mcp-ensure ask chat ask-claude chat-claude \
+        llm-setup llm-config llm-up mcp-ensure ask chat ask-claude chat-claude \
         mcp-key mcp-serve mcp-connect mcp-stop

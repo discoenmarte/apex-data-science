@@ -28,3 +28,6 @@ __pycache__/
 
 # Machine-specific MCP registration (use .mcp.json.example as template)
 .mcp.json
+
+# Local LLM config (use llm.env.example as template)
+llm.env
