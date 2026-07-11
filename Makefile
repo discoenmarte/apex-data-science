@@ -33,9 +33,11 @@ help:
 	@echo "    make mcp-quality     fmt + clippy -D warnings + check + test"
 	@echo "    make mcp-inspector   Open MCP Inspector UI (needs Node)"
 	@echo ""
-	@echo "  ASK INSIGHTS FROM YOUR TERMINAL (needs 'claude login' once)"
-	@echo "    make ask q=\"...\"     One question -> insight (uses the MCP tools)"
-	@echo "    make chat            Interactive session with the MCP tools loaded"
+	@echo "  ASK INSIGHTS FROM YOUR TERMINAL (free local model, no accounts)"
+	@echo "    make llm-setup       One-time: install Ollama + pull the local model"
+	@echo "    make ask q=\"...\"     One question -> insight (agent + MCP tools)"
+	@echo "    make chat            Interactive: type phrases, get insights"
+	@echo "    make ask-claude ...  Same but with Claude as the brain (claude login)"
 	@echo ""
 	@echo "  SHARE THE MCP (URL + API key, for teammates/agents)"
 	@echo "    make mcp-key         Generate/show the API key"
@@ -118,22 +120,46 @@ mcp-quality:
 mcp-inspector:
 	$(MAKE) -C $(MCP) inspector
 
-## ---------- ask insights from the terminal ----------
-# Requires the claude CLI ('curl -fsSL https://claude.ai/install.sh | bash' + 'claude login' once)
+## ---------- ask insights from the terminal (model-agnostic) ----------
+# Default brain: a FREE LOCAL model via Ollama (no accounts, no API keys).
+# Works with ANY OpenAI-compatible endpoint: LLM_BASE_URL / LLM_MODEL / LLM_API_KEY.
+
+# One-time: install Ollama + pull the local model
+llm-setup:
+	@which ollama >/dev/null 2>&1 || brew install ollama
+	@pgrep -x ollama >/dev/null 2>&1 || (nohup ollama serve >/tmp/ollama.log 2>&1 & sleep 3)
+	@ollama pull qwen2.5:14b
+	@echo "LLM local listo: qwen2.5:14b"
+
+llm-up:
+	@pgrep -x ollama >/dev/null 2>&1 || (nohup ollama serve >/tmp/ollama.log 2>&1 & sleep 3)
+
+# Start the MCP HTTP server only if it isn't already up
+mcp-ensure:
+	@docker ps --format '{{.Names}}' | grep -q '^apex-mcp-http$$' || $(MAKE) mcp-serve
+
+ask: mcp-ensure llm-up
+	@test -n "$(q)" || { echo 'usage: make ask q="your question"'; exit 1; }
+	@python3 tools/ask.py "$(q)"
+
+chat: mcp-ensure llm-up
+	@python3 tools/ask.py
+
+# Alternative brain: Claude CLI (needs 'claude login' once) — same MCP server
 CLAUDE = PATH="$$HOME/.local/bin:$$PATH" claude
 APEX_PROMPT = You have MCP tools from the 'apex' server (a knowledge graph of the client database \
 plus guarded read-only SQL). Flow: search_tables -> describe_table/join_path -> aggregate_table \
 or run_read_query for real numbers (needs the VPN tunnel up). Ontology tools always work. \
 Answer concisely, in the language of the question, citing the tables you used.
 
-ask:
-	@test -n "$(q)" || { echo 'usage: make ask q="your question"'; exit 1; }
+ask-claude:
+	@test -n "$(q)" || { echo 'usage: make ask-claude q="your question"'; exit 1; }
 	@$(CLAUDE) -p "$(q)" \
 	  --mcp-config .mcp.json \
 	  --allowedTools "mcp__apex" \
 	  --append-system-prompt "$(APEX_PROMPT)"
 
-chat:
+chat-claude:
 	@$(CLAUDE) --mcp-config .mcp.json \
 	  --allowedTools "mcp__apex" \
 	  --append-system-prompt "$(APEX_PROMPT)"
@@ -176,4 +202,5 @@ mcp-stop:
 
 .PHONY: help setup graph-up graph-browser graph-down demo demo-db demo-profile demo-clean \
         vpn vpn-forward profile mcp-build mcp-test mcp-quality mcp-inspector \
-        ask chat mcp-key mcp-serve mcp-connect mcp-stop
+        llm-setup llm-up mcp-ensure ask chat ask-claude chat-claude \
+        mcp-key mcp-serve mcp-connect mcp-stop

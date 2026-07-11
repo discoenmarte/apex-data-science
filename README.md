@@ -157,29 +157,41 @@ for real numbers (only if the VPN is up).
 
 ## Ask insights from your terminal
 
-Type a phrase, get an insight — Claude acts as the agent and drives the MCP tools for you.
+Type a phrase, get an insight. **Model-agnostic**: the agent brain is any OpenAI-compatible
+endpoint — by default a **free local model via Ollama** (no accounts, no API keys, data never
+leaves your machine).
 
-**One-time setup** (installs the `claude` CLI and logs into your existing Claude account):
+**One-time setup:**
 
 ```bash
-curl -fsSL https://claude.ai/install.sh | bash
-claude login
+make llm-setup      # installs Ollama + pulls the local model (~13 GB, one time)
 ```
 
 **Then, from the repo root:**
 
 ```bash
 # One-shot question
-make ask q="¿Qué tablas tienen que ver con cartera y cómo las joineo?"
-make ask q="Who are the top 20 debtors by outstanding balance?"   # needs VPN up
+make ask q="¿Qué empresas le deben plata este mes al departamento de oncología?"
 
-# Or an interactive session (keeps context between questions)
+# Or an interactive session — type phrases, watch the agent work, get insights
 make chat
 ```
 
-`make ask` runs Claude headless with the `apex` tools pre-approved: it searches the graph,
-plans the joins, and (if the VPN tunnel is up) runs the guarded aggregate — then prints
-the answer with the tables it used.
+You'll see the agent's tool calls live (searching the graph, planning joins, running the
+guarded SQL) and then the answer with the tables it used and the exact SQL. Ontology
+questions work offline; real numbers need the VPN tunnel up (steps 3–4 above).
+
+**Swap the brain with env vars** — same command, any provider:
+
+```bash
+LLM_MODEL=qwen2.5:14b                          make ask q="..."   # another local model
+LLM_BASE_URL=https://api.openai.com/v1 \
+LLM_API_KEY=sk-... LLM_MODEL=gpt-4o            make ask q="..."   # any cloud provider
+make ask-claude q="..."                                            # Claude CLI (claude login)
+```
+
+This is the same MCP contract your agent graph (ADK Rust) will consume — `tools/ask.py`
+is ~200 lines of reference client you can port.
 
 ---
 

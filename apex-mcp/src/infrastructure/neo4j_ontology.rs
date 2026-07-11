@@ -21,7 +21,8 @@ impl Neo4jOntology {
     }
 
     /// Escapa caracteres especiales de Lucene y arma una consulta tolerante:
-    /// coincidencia exacta O prefijo, por término.
+    /// coincidencia exacta O prefijo, por término, con y sin acentos
+    /// (el esquema mezcla "oncologia" y "oncología").
     fn lucene_query(term: &str) -> String {
         let sanitized: String = term
             .chars()
@@ -33,9 +34,35 @@ impl Neo4jOntology {
                 }
             })
             .collect();
+        let fold = |w: &str| -> String {
+            w.chars()
+                .map(|c| match c {
+                    'á' | 'à' | 'ä' | 'â' => 'a',
+                    'é' | 'è' | 'ë' | 'ê' => 'e',
+                    'í' | 'ì' | 'ï' | 'î' => 'i',
+                    'ó' | 'ò' | 'ö' | 'ô' => 'o',
+                    'ú' | 'ù' | 'ü' | 'û' => 'u',
+                    'ñ' => 'n',
+                    'Á' | 'À' | 'Ä' | 'Â' => 'A',
+                    'É' | 'È' | 'Ë' | 'Ê' => 'E',
+                    'Í' | 'Ì' | 'Ï' | 'Î' => 'I',
+                    'Ó' | 'Ò' | 'Ö' | 'Ô' => 'O',
+                    'Ú' | 'Ù' | 'Ü' | 'Û' => 'U',
+                    'Ñ' => 'N',
+                    other => other,
+                })
+                .collect()
+        };
         sanitized
             .split_whitespace()
-            .map(|w| format!("{w} {w}*"))
+            .flat_map(|w| {
+                let folded = fold(w);
+                let mut variants = vec![format!("{w} {w}*")];
+                if folded != w {
+                    variants.push(format!("{folded} {folded}*"));
+                }
+                variants
+            })
             .collect::<Vec<_>>()
             .join(" ")
     }
