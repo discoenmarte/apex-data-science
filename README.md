@@ -155,6 +155,62 @@ for real numbers (only if the VPN is up).
 
 ---
 
+## Ask insights from your terminal
+
+Type a phrase, get an insight — Claude acts as the agent and drives the MCP tools for you.
+
+**One-time setup** (installs the `claude` CLI and logs into your existing Claude account):
+
+```bash
+curl -fsSL https://claude.ai/install.sh | bash
+claude login
+```
+
+**Then, from the repo root:**
+
+```bash
+# One-shot question
+make ask q="¿Qué tablas tienen que ver con cartera y cómo las joineo?"
+make ask q="Who are the top 20 debtors by outstanding balance?"   # needs VPN up
+
+# Or an interactive session (keeps context between questions)
+make chat
+```
+
+`make ask` runs Claude headless with the `apex` tools pre-approved: it searches the graph,
+plans the joins, and (if the VPN tunnel is up) runs the guarded aggregate — then prints
+the answer with the tables it used.
+
+---
+
+## Share the MCP connection — URL + API key
+
+To let a teammate or another agent (e.g. the ADK Rust agent graph) connect **without**
+knowing anything about Docker or this repo's paths:
+
+```bash
+make mcp-serve      # starts the server over HTTP on :8977 (auto-generates the key)
+make mcp-connect    # prints ready-to-paste connection commands
+```
+
+`make mcp-connect` outputs, with the real key filled in:
+
+```bash
+# Claude Code — one command:
+claude mcp add apex --transport http http://localhost:8977/mcp \
+  --header "Authorization: Bearer <KEY>"
+
+# Any MCP client — JSON config:
+{ "mcpServers": { "apex": { "type": "http", "url": "http://localhost:8977/mcp",
+    "headers": { "Authorization": "Bearer <KEY>" } } } }
+```
+
+Every request without the key gets `401`. The key lives in `apex-mcp/.env`
+(`MCP_API_KEY`, gitignored); rotate it by deleting that line and running `make mcp-key`.
+To share beyond localhost, expose the port on your LAN or tunnel it — same URL + key.
+
+---
+
 ## Security & privacy
 
 - **Schema only** in step 1 — the profiler reads Postgres catalogs (`pg_class`,
@@ -166,6 +222,8 @@ for real numbers (only if the VPN is up).
   clinical database. Aggregates are the intended path.
 - **No secrets in git** — all `.env` / `.client` files are gitignored; commit only the
   `.example` templates.
+- **HTTP mode requires a Bearer API key** (`MCP_API_KEY`, ≥16 chars, constant-time
+  comparison); every unauthenticated request gets `401`. stdio mode is local-only.
 
 ---
 
