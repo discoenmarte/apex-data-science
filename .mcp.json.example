@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "apex": {
+      "command": "docker",
+      "args": [
+        "run", "-i", "--rm",
+        "--add-host", "host.docker.internal:host-gateway",
+        "--env-file", "/ABSOLUTE/PATH/TO/ds_pipeline/apex-mcp/.env",
+        "-v", "/ABSOLUTE/PATH/TO/ds_pipeline/apex-mcp:/app",
+        "-w", "/app",
+        "rust:1.90-slim", "/app/target/release/apex-mcp"
+      ]
+    }
+  }
+}

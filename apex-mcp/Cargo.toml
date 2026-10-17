@@ -1,0 +1,38 @@
+[package]
+name = "apex-mcp"
+version = "0.1.0"
+edition = "2021"
+description = "Paso 2 APEX: servidor MCP sobre la ontología Neo4j con consultas runtime guardadas al Postgres origen"
+
+[dependencies]
+# MCP (SDK oficial) — stdio local + streamable HTTP con API key
+rmcp = { version = "2", features = ["transport-io", "transport-streamable-http-server"] }
+axum = "0.8"
+
+# Async
+tokio = { version = "1", features = ["full"] }
+async-trait = "0.1"
+futures = "0.3"
+
+# Grafo (ontología)
+neo4rs = "0.7"
+
+# Postgres origen (mismo stack que apex-profiler)
+tokio-postgres = "0.7"
+deadpool-postgres = "0.14"
+
+# Guard de SQL por AST
+sqlparser = "0.52"
+
+# Serialización
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Errores y logging (stderr — stdout es del protocolo MCP)
+anyhow = "1"
+thiserror = "2"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[profile.release]
+lto = true

@@ -1,0 +1,38 @@
+#!/usr/bin/expect -f
+# Conexión VPN no-interactiva: password por env VPN_PASSWORD, código 2FA por archivo.
+# Uso:  VPN_PASSWORD='...' TOKEN_FILE=/tmp/vpn-2fa-token.txt ./vpn-connect-auto.exp
+# Cuando llegue el código al correo:  echo 'CODIGO' > $TOKEN_FILE
+# Resiliente: si el FortiGate reintenta y vuelve a pedir código, espera un archivo nuevo.
+
+set timeout 180
+set password $env(VPN_PASSWORD)
+set token_file $env(TOKEN_FILE)
+
+spawn docker compose -f client/compose.yml run --rm --service-ports --name vpn-client vpn-client
+
+expect {
+    -nocase "assword" {
+        send -- "$password\r"
+        exp_continue
+    }
+    -re {(?i)(code|token|otp|ftm)[: ]} {
+        puts "\n>>> Prompt 2FA detectado. Esperando código en $token_file ..."
+        while {![file exists $token_file]} { after 2000 }
+        after 1000
+        set f [open $token_file r]
+        set tok [string trim [read $f]]
+        close $f
+        file delete $token_file
+        send -- "$tok\r"
+        exp_continue
+    }
+    -re {(?i)(tunnel connected|session established|configured as|established dtls|established connection)} {
+        puts "\n>>> TUNEL ESTABLECIDO"
+    }
+    timeout { puts "\nERROR: timeout esperando progreso de autenticación"; exit 1 }
+    eof { puts "\nERROR: el proceso terminó durante la autenticación"; exit 1 }
+}
+
+# Mantener la sesión viva indefinidamente y volcar el log de openconnect
+set timeout -1
+expect eof

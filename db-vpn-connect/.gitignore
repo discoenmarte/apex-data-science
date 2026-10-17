@@ -1,0 +1,8 @@
+# Secrets — nunca subir
+.env/.client
+# Artefactos específicos del cliente (metadata de esquema)
+data/*.csv
+# Python
+utils/__pycache__/
+*.pyc
+.ipynb_checkpoints/

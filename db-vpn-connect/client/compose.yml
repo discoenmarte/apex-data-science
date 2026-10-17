@@ -1,0 +1,24 @@
+services:
+  vpn-client:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vpn-ssl-client
+    env_file:
+      - ../.env/.client
+    privileged: true
+    tty: true
+    stdin_open: true
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    networks:
+      - vpn-network
+
+networks:
+  vpn-network:
+    driver: bridge

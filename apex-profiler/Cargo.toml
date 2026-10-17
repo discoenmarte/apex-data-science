@@ -1,0 +1,23 @@
+[package]
+name = "apex-profiler"
+version = "0.1.0"
+edition = "2021"
+description = "Parallel schema profiler: Postgres catalog -> Neo4j knowledge graph (schemas, not data)"
+
+[dependencies]
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+tokio-postgres = "0.7.18"
+deadpool-postgres = "0.14.1"
+neo4rs = "0.7.3"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+anyhow = "1"
+async-trait = "0.1"
+futures = "0.3"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+chrono = { version = "0.4", features = ["serde"] }
+
+[profile.release]
+lto = true
+strip = true
